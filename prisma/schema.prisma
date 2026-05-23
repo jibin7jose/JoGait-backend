@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  CLINICIAN
+  CARE_COORDINATOR
+  ADMIN
+}
+
+enum SessionStatus {
+  PENDING_REVIEW
+  REVIEWED
+  FLAGGED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patientProfile   Patient?
+  clinicianProfile Clinician?
+}
+
+model Patient {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  displayName String
+  dateOfBirth DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user       User              @relation(fields: [userId], references: [id])
+  sessions   RehabSession[]
+  plans      ExercisePlan[]
+  notes      ClinicalNote[]
+}
+
+model Clinician {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  displayName String
+  licenseNo   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id])
+  plans ExercisePlan[]
+  notes ClinicalNote[]
+}
+
+model ExercisePlan {
+  id          String   @id @default(uuid())
+  patientId   String
+  clinicianId String
+  title       String
+  description String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patient   Patient        @relation(fields: [patientId], references: [id])
+  clinician Clinician      @relation(fields: [clinicianId], references: [id])
+  sessions  RehabSession[]
+}
+
+model RehabSession {
+  id             String        @id @default(uuid())
+  patientId      String
+  planId         String?
+  mobileSessionId String       @unique
+  exerciseType   String
+  status         SessionStatus @default(PENDING_REVIEW)
+  startedAt      DateTime
+  endedAt        DateTime
+  scoreSummary   Json
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  patient Patient         @relation(fields: [patientId], references: [id])
+  plan    ExercisePlan?   @relation(fields: [planId], references: [id])
+  metrics SessionMetric[]
+  notes   ClinicalNote[]
+}
+
+model SessionMetric {
+  id        String   @id @default(uuid())
+  sessionId String
+  name      String
+  value     Float
+  unit      String?
+  capturedAt DateTime?
+  createdAt DateTime @default(now())
+
+  session RehabSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, name])
+}
+
+model ClinicalNote {
+  id          String   @id @default(uuid())
+  patientId   String
+  clinicianId String?
+  sessionId   String?
+  body        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patient   Patient       @relation(fields: [patientId], references: [id])
+  clinician Clinician?    @relation(fields: [clinicianId], references: [id])
+  session   RehabSession? @relation(fields: [sessionId], references: [id])
+}
+
