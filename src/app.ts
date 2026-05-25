@@ -18,6 +18,11 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
+// Root Endpoint
+app.get('/', (req, res) => {
+  res.send('JoGait Backend API is running!');
+});
+
 // Mount Auth Routes
 app.use('/api/auth', authRoutes);
 
