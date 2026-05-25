@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });
 
-// We will mount our routes here next
-// app.use('/api/auth', authRoutes);
+// Mount Auth Routes
+app.use('/api/auth', authRoutes);
 
 export default app;
