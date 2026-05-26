@@ -27,6 +27,8 @@ model Session {
   flags        String[]
   notes        String?
   createdAt    DateTime @default(now())
+
+  @@index([patientId])
 }
 
 model Metric {
@@ -36,6 +38,8 @@ model Metric {
   value      Float
   unit       String
   timestamp  DateTime
+
+  @@index([sessionId])
 }
 
 model Plan {

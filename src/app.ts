@@ -6,6 +6,8 @@ import authRoutes from './routes/auth.routes';
 import sessionRoutes from './routes/session.routes';
 import patientRoutes from './routes/patient.routes';
 import planRoutes from './routes/plan.routes';
+import emrRoutes from './routes/emr.routes';
+import billingRoutes from './routes/billing.routes';
 import { accessAuditLogger } from './middlewares/auditLogger.middleware';
 
 const app = express();
@@ -47,5 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/plans', planRoutes);
+app.use('/api/emr', emrRoutes);
+app.use('/api/billing', billingRoutes);
 
 export default app;

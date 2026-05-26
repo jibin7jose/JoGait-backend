@@ -1,0 +1,18 @@
+service: jogait-backend
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  # Environment variables to pass to the Lambda function
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+    JWT_SECRET: ${env:JWT_SECRET}
+    NODE_ENV: production
+
+functions:
+  api:
+    handler: dist/lambda.handler # We point this to our compiled TS output
+    events:
+      - httpApi: '*' # Proxy all HTTP requests to Express
