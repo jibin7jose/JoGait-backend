@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import authRoutes from './routes/auth.routes';
+import sessionRoutes from './routes/session.routes';
 
 const app = express();
 
@@ -25,5 +26,6 @@ app.get('/', (req, res) => {
 
 // Mount Auth Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/sessions', sessionRoutes);
 
 export default app;
