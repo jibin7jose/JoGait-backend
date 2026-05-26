@@ -25,6 +25,7 @@ model Session {
   endTime      DateTime
   scoreSummary Json     // { overallScore: number, symmetryIndex: number }
   flags        String[]
+  notes        String?
   createdAt    DateTime @default(now())
 }
 
@@ -36,3 +37,14 @@ model Metric {
   unit       String
   timestamp  DateTime
 }
+
+model Plan {
+  id          String   @id @default(uuid())
+  patientId   String
+  clinicianId String
+  title       String
+  description String?
+  status      String   @default("active") // "active" | "completed"
+  createdAt   DateTime @default(now())
+}
+

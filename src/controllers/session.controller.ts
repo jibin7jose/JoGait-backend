@@ -61,3 +61,30 @@ export const uploadSession = async (req: AuthRequest, res: Response): Promise<vo
     res.status(500).json({ error: 'Internal server error during upload' });
   }
 };
+
+export const addSessionNote = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user?.role !== 'clinician' && req.user?.role !== 'admin') {
+      res.status(403).json({ error: 'Access denied. Only clinicians can add notes.' });
+      return;
+    }
+
+    const { sessionId } = req.params;
+    const { notes } = req.body;
+
+    if (!notes) {
+      res.status(400).json({ error: 'Notes content is required' });
+      return;
+    }
+
+    const updatedSession = await prisma.session.update({
+      where: { id: sessionId },
+      data: { notes }
+    });
+
+    res.status(200).json({ message: 'Note added successfully', session: updatedSession });
+  } catch (error) {
+    console.error('Add session note error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
