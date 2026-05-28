@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { RequestHandler, Router } from 'express';
 import { createSubscription } from '../controllers/billing.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
@@ -8,6 +8,6 @@ const router = Router();
 router.use(authenticateToken);
 
 // POST /api/billing/subscribe
-router.post('/subscribe', createSubscription);
+router.post('/subscribe', createSubscription as RequestHandler);
 
 export default router;

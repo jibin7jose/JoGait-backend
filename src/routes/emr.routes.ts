@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { RequestHandler, Router } from 'express';
 import { exportPatientFhir } from '../controllers/emr.controller';
 import { authenticateToken } from '../middlewares/auth.middleware';
 
@@ -8,6 +8,6 @@ const router = Router();
 router.use(authenticateToken);
 
 // GET /api/emr/patient/:patientId/export - Generates HL7 FHIR bundle
-router.get('/patient/:patientId/export', exportPatientFhir);
+router.get('/patient/:patientId/export', exportPatientFhir as RequestHandler);
 
 export default router;
