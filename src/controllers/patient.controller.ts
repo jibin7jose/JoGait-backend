@@ -40,11 +40,31 @@ export const getPatientHistory = async (req: AuthRequest, res: Response): Promis
     const sessions = await prisma.session.findMany({
       where: { patientId },
       orderBy: { startTime: 'desc' },
-      // Optional: Include metrics if the dashboard needs the raw data for charts
-      // include: { Metric: true }
     });
 
-    res.status(200).json({ sessions });
+    const sessionIds = sessions.map((session) => session.id);
+    const metrics = sessionIds.length
+      ? await prisma.metric.findMany({
+          where: { sessionId: { in: sessionIds } },
+          orderBy: { timestamp: 'asc' },
+        })
+      : [];
+
+    const metricsBySessionId = metrics.reduce<Record<string, typeof metrics>>((acc, metric) => {
+      if (!acc[metric.sessionId]) {
+        acc[metric.sessionId] = [];
+      }
+
+      acc[metric.sessionId].push(metric);
+      return acc;
+    }, {});
+
+    res.status(200).json({
+      sessions: sessions.map((session) => ({
+        ...session,
+        metrics: metricsBySessionId[session.id] || [],
+      })),
+    });
   } catch (error) {
     console.error('Fetch patient history error:', error);
     res.status(500).json({ error: 'Internal server error' });

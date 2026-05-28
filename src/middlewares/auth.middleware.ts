@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
@@ -10,7 +10,8 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const authenticateToken: RequestHandler = (req: Request, res: Response, next: NextFunction): void => {
+  const authReq = req as AuthRequest;
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -25,7 +26,7 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
       return;
     }
     
-    req.user = decoded as { userId: string; role: string };
+    authReq.user = decoded as { userId: string; role: string };
     next();
   });
 };
