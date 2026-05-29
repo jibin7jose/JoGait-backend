@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { prisma } from '../utils/prisma';
+import { AuthRequest } from '../middlewares/auth.middleware';
 
 const ALLOWED_ROLES = new Set(['clinician', 'patient']);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -16,11 +17,11 @@ function getJwtSecret() {
   return secret;
 }
 
-function buildAuthResponse(user: { id: string; name: string; email: string; role: string }) {
+function buildAuthResponse(user: { id: string; name: string; email: string; role: string; tokenVersion: number }) {
   const expiresIn = (process.env.JWT_ACCESS_EXPIRES_IN || '7d') as SignOptions['expiresIn'];
 
   const token = jwt.sign(
-    { userId: user.id, role: user.role },
+    { userId: user.id, role: user.role, tokenVersion: user.tokenVersion },
     getJwtSecret(),
     { expiresIn, issuer: 'jogait-api' },
   );
@@ -156,6 +157,90 @@ export const me = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({ user });
   } catch (error) {
     console.error('Current user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authUser = (req as AuthRequest).user;
+
+    if (!authUser?.userId) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!String(currentPassword || '').trim() || !String(newPassword || '').trim()) {
+      res.status(400).json({ error: 'Current password and new password are required' });
+      return;
+    }
+
+    if (String(newPassword).length < 8) {
+      res.status(400).json({ error: 'New password must be at least 8 characters' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.userId },
+    });
+
+    if (!user) {
+      res.status(401).json({ error: 'Account no longer exists' });
+      return;
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: await bcrypt.hash(newPassword, 10),
+        tokenVersion: { increment: 1 },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        tokenVersion: true,
+      },
+    });
+
+    res.status(200).json({
+      message: 'Password updated successfully',
+      ...buildAuthResponse(updatedUser),
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authUser = (req as AuthRequest).user;
+
+    if (!authUser?.userId) {
+      res.status(200).json({ message: 'Logged out successfully' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: authUser.userId },
+      data: {
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
